@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Request
 import requests
 from pydantic import BaseModel
 import base64
+import urllib.parse
 
 
 URL="https://api.easee.cloud/api/"
@@ -13,8 +14,6 @@ URL="https://api.easee.cloud/api/"
 # http://161.35.205.84:8000/
 #
 # TODO
-# Encryption and decryption of passwords
-# OK -- GET : User and Charger Specific Consumption : https://developer.easee.cloud/reference/get_api-sessions-charger-chargerid-sessions-from-to
 # POST : Set Dynanic Circuit Current : https://developer.easee.cloud/reference/post_api-sites-siteid-circuits-circuitid-dynamiccurrent
 # 
 #
@@ -73,6 +72,10 @@ def read_root():
     return {"Easee Api Gateway - docs": "http://161.35.205.84:8000/docs#/"}
 
 
+@app.get("/urlEncode/{url}")
+def url_encode(url:str):
+    return urllib.parse.quote(url)
+
 # Returns the configuration of the given chargerId, needs verification in order to retreive data : https://developer.easee.cloud/reference/get_api-chargers-id-config
 @app.get("/getConfiguration/{chargerId}/{username}/{password}")
 def get_configuration_old(chargerId:str, username:str, password:str):  
@@ -88,7 +91,9 @@ def get_state(chargerId:str, username:str, password:str):
 # Returns the powerusage between 2 time slots -> parameters need to be URL encoded in order to retreive data, needs verification in order to retreive data : https://developer.easee.cloud/reference/get_api-chargers-id-usage-hourly-from-to
 @app.get("/powerUsage/{chargerId}/{afrom}/{to}/{username}/{password}")
 def get_power_usage(chargerId:str, afrom:str, to:str, username:str, password:str):  
-    response = get_request(f"{URL}chargers/{chargerId}/usage/hourly/{afrom}/{to}", username, password)
+    afrom_encoded = url_encode(afrom)
+    to_encoded = url_encode(to)
+    response = get_request(f"{URL}chargers/{chargerId}/usage/hourly/{afrom_encoded}/{to_encoded}", username, password)
     return response
 
 # Return the charger details of the given chargerId, needs verification in order to retreive data : https://developer.easee.cloud/reference/get_api-chargers-id-details
@@ -107,7 +112,9 @@ def get_is_enabled(chargerId:str, username:str, password:str):
 # GET : User and Charger Specific Consumption : https://developer.easee.cloud/reference/get_api-sessions-charger-chargerid-sessions-from-to * Encode URL
 @app.get("/getChargingSessions/{chargerId}/{afrom}/{to}/{username}/{password}")
 def get_charging_sessions(chargerId:str, afrom:str, to:str, username:str, password:str):
-    response = get_request(f"{URL}sessions/charger/{chargerId}/sessions/{afrom}/{to}", username, password)
+    afrom_encoded = url_encode(afrom)
+    to_encoded = url_encode(to)
+    response = get_request(f"{URL}sessions/charger/{chargerId}/sessions/{afrom_encoded}/{to_encoded}", username, password)
     return response
 
 # Returns all the sites that are configured on the user's account
